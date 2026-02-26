@@ -876,19 +876,62 @@ export class WorkflowDiffEngine {
     workflow.name = operation.name;
   }
 
+  /**
+   * Resolve the effective tag identifier from an AddTag/RemoveTag operation.
+   * Accepts tag, tagId, or tagName (in priority order: tagId > tagName > tag).
+   */
+  private resolveTagIdentifier(operation: AddTagOperation | RemoveTagOperation): string {
+    return operation.tagId || operation.tagName || operation.tag || '';
+  }
+
+  /**
+   * Check if a tag already exists in the workflow's tags array.
+   * Handles both string tags (internal) and object tags (from n8n API).
+   * n8n API returns tags as objects: {id: "...", name: "...", createdAt: "...", updatedAt: "..."}
+   */
+  private tagExists(tags: any[], identifier: string): boolean {
+    return tags.some(t => {
+      if (typeof t === 'string') return t === identifier;
+      if (typeof t === 'object' && t !== null) {
+        return t.id === identifier || t.name === identifier;
+      }
+      return false;
+    });
+  }
+
+  /**
+   * Find the index of a tag in the workflow's tags array.
+   * Handles both string tags and object tags from n8n API.
+   */
+  private findTagIndex(tags: any[], identifier: string): number {
+    return tags.findIndex(t => {
+      if (typeof t === 'string') return t === identifier;
+      if (typeof t === 'object' && t !== null) {
+        return t.id === identifier || t.name === identifier;
+      }
+      return false;
+    });
+  }
+
   private applyAddTag(workflow: Workflow, operation: AddTagOperation): void {
     if (!workflow.tags) {
       workflow.tags = [];
     }
-    if (!workflow.tags.includes(operation.tag)) {
-      workflow.tags.push(operation.tag);
+    const identifier = this.resolveTagIdentifier(operation);
+    if (!identifier) return;
+
+    if (!this.tagExists(workflow.tags as any[], identifier)) {
+      (workflow.tags as any[]).push(identifier);
     }
   }
 
   private applyRemoveTag(workflow: Workflow, operation: RemoveTagOperation): void {
     if (!workflow.tags) return;
 
-    const index = workflow.tags.indexOf(operation.tag);
+    const identifier = this.resolveTagIdentifier(operation);
+    if (!identifier) return;
+
+    const index = this.findTagIndex(workflow.tags as any[], identifier);
     if (index !== -1) {
       workflow.tags.splice(index, 1);
     }

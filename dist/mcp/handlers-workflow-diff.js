@@ -259,6 +259,29 @@ async function handleUpdatePartialWorkflow(args, repository, context) {
         }
         try {
             const updatedWorkflow = await client.updateWorkflow(input.id, diffResult.workflow);
+            const hasTagOps = input.operations.some((op) => op.type === 'addTag' || op.type === 'removeTag');
+            if (hasTagOps && diffResult.workflow) {
+                try {
+                    const modifiedTags = (diffResult.workflow.tags || []);
+                    const tagIds = [];
+                    for (const t of modifiedTags) {
+                        if (typeof t === 'string') {
+                            tagIds.push({ id: t });
+                        }
+                        else if (typeof t === 'object' && t !== null && t.id) {
+                            tagIds.push({ id: t.id });
+                        }
+                    }
+                    await client.updateWorkflowTags(input.id, tagIds);
+                    logger_1.logger.info('Workflow tags updated via dedicated tags endpoint', {
+                        workflowId: input.id,
+                        tagCount: tagIds.length
+                    });
+                }
+                catch (tagError) {
+                    logger_1.logger.error('Failed to update workflow tags', tagError);
+                }
+            }
             let finalWorkflow = updatedWorkflow;
             let activationMessage = '';
             try {

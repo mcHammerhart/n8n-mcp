@@ -485,6 +485,24 @@ export class N8nApiClient {
     }
   }
 
+  /**
+   * Update workflow tags via the dedicated tags endpoint.
+   * This is the ONLY way to modify workflow tags — the main PUT /workflows/{id}
+   * endpoint ignores the tags field (it's stripped by cleanWorkflowForUpdate).
+   *
+   * @param workflowId - Workflow ID
+   * @param tagIds - Array of tag objects with id field, e.g. [{id: "abc"}, {id: "def"}]
+   * @returns Updated tags array from n8n
+   */
+  async updateWorkflowTags(workflowId: string, tagIds: Array<{ id: string }>): Promise<Tag[]> {
+    try {
+      const response = await this.client.put(`/workflows/${workflowId}/tags`, tagIds);
+      return response.data;
+    } catch (error) {
+      throw handleN8nApiError(error);
+    }
+  }
+
   async deleteTag(id: string): Promise<void> {
     try {
       await this.client.delete(`/tags/${id}`);

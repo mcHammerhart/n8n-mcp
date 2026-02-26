@@ -82,11 +82,15 @@ export interface UpdateNameOperation extends DiffOperation {
 }
 export interface AddTagOperation extends DiffOperation {
     type: 'addTag';
-    tag: string;
+    tag?: string;
+    tagId?: string;
+    tagName?: string;
 }
 export interface RemoveTagOperation extends DiffOperation {
     type: 'removeTag';
-    tag: string;
+    tag?: string;
+    tagId?: string;
+    tagName?: string;
 }
 export interface ActivateWorkflowOperation extends DiffOperation {
     type: 'activateWorkflow';

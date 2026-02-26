@@ -289,6 +289,39 @@ export async function handleUpdatePartialWorkflow(
     try {
       const updatedWorkflow = await client.updateWorkflow(input.id, diffResult.workflow!);
 
+      // Handle tag operations via dedicated endpoint
+      // The main PUT /workflows/{id} endpoint ignores tags (they are stripped by
+      // cleanWorkflowForUpdate). Tags must be set via PUT /workflows/{id}/tags.
+      const hasTagOps = input.operations.some(
+        (op: any) => op.type === 'addTag' || op.type === 'removeTag'
+      );
+
+      if (hasTagOps && diffResult.workflow) {
+        try {
+          // Compute desired tag set from the diff result's modified workflow
+          const modifiedTags = (diffResult.workflow.tags || []) as any[];
+          const tagIds: Array<{ id: string }> = [];
+
+          for (const t of modifiedTags) {
+            if (typeof t === 'string') {
+              // Could be a tag ID or name — try as ID first
+              tagIds.push({ id: t });
+            } else if (typeof t === 'object' && t !== null && t.id) {
+              tagIds.push({ id: t.id });
+            }
+          }
+
+          await client.updateWorkflowTags(input.id, tagIds);
+          logger.info('Workflow tags updated via dedicated tags endpoint', {
+            workflowId: input.id,
+            tagCount: tagIds.length
+          });
+        } catch (tagError) {
+          logger.error('Failed to update workflow tags', tagError);
+          // Non-blocking: workflow structure was saved, only tags failed
+        }
+      }
+
       // Handle activation/deactivation if requested
       let finalWorkflow = updatedWorkflow;
       let activationMessage = '';

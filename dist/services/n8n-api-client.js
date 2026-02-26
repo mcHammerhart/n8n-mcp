@@ -357,6 +357,15 @@ class N8nApiClient {
             throw (0, n8n_errors_1.handleN8nApiError)(error);
         }
     }
+    async updateWorkflowTags(workflowId, tagIds) {
+        try {
+            const response = await this.client.put(`/workflows/${workflowId}/tags`, tagIds);
+            return response.data;
+        }
+        catch (error) {
+            throw (0, n8n_errors_1.handleN8nApiError)(error);
+        }
+    }
     async deleteTag(id) {
         try {
             await this.client.delete(`/tags/${id}`);

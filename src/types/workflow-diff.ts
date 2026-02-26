@@ -106,12 +106,16 @@ export interface UpdateNameOperation extends DiffOperation {
 
 export interface AddTagOperation extends DiffOperation {
   type: 'addTag';
-  tag: string;
+  tag?: string;     // Tag ID or name (original field)
+  tagId?: string;   // Tag ID (preferred — avoids ambiguity)
+  tagName?: string; // Tag name (resolved to ID via listTags)
 }
 
 export interface RemoveTagOperation extends DiffOperation {
   type: 'removeTag';
-  tag: string;
+  tag?: string;     // Tag ID or name (original field)
+  tagId?: string;   // Tag ID (preferred)
+  tagName?: string; // Tag name (resolved to ID via listTags)
 }
 
 export interface ActivateWorkflowOperation extends DiffOperation {

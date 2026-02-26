@@ -1959,6 +1959,154 @@ describe('WorkflowDiffEngine', () => {
       expect(result.workflow!.tags).toHaveLength(1);
     });
 
+    it('should add tag using tagId alias', async () => {
+      const operation: AddTagOperation = {
+        type: 'addTag',
+        tagId: 'new-tag-id'
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(baseWorkflow, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toContain('new-tag-id');
+    });
+
+    it('should add tag using tagName alias', async () => {
+      const operation: AddTagOperation = {
+        type: 'addTag',
+        tagName: 'production'
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(baseWorkflow, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toContain('production');
+    });
+
+    it('should handle tags as objects from n8n API (addTag)', async () => {
+      // Simulate n8n API response where tags are objects, not strings
+      const workflowWithObjectTags = JSON.parse(JSON.stringify(baseWorkflow));
+      workflowWithObjectTags.tags = [
+        { id: 'tag-abc', name: 'ExistingTag', createdAt: '2026-01-01', updatedAt: '2026-01-01' }
+      ];
+
+      const operation: AddTagOperation = {
+        type: 'addTag',
+        tagId: 'tag-def'
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(workflowWithObjectTags, request);
+
+      expect(result.success).toBe(true);
+      // Should have original object tag plus new string tag
+      expect(result.workflow!.tags).toHaveLength(2);
+    });
+
+    it('should not duplicate when addTag matches existing object tag by id', async () => {
+      const workflowWithObjectTags = JSON.parse(JSON.stringify(baseWorkflow));
+      workflowWithObjectTags.tags = [
+        { id: 'tag-abc', name: 'ExistingTag' }
+      ];
+
+      const operation: AddTagOperation = {
+        type: 'addTag',
+        tagId: 'tag-abc' // Same ID as existing
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(workflowWithObjectTags, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toHaveLength(1); // No duplicate
+    });
+
+    it('should not duplicate when addTag matches existing object tag by name', async () => {
+      const workflowWithObjectTags = JSON.parse(JSON.stringify(baseWorkflow));
+      workflowWithObjectTags.tags = [
+        { id: 'tag-abc', name: 'ExistingTag' }
+      ];
+
+      const operation: AddTagOperation = {
+        type: 'addTag',
+        tagName: 'ExistingTag' // Same name as existing
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(workflowWithObjectTags, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toHaveLength(1); // No duplicate
+    });
+
+    it('should remove object tag by id', async () => {
+      const workflowWithObjectTags = JSON.parse(JSON.stringify(baseWorkflow));
+      workflowWithObjectTags.tags = [
+        { id: 'tag-abc', name: 'TagA' },
+        { id: 'tag-def', name: 'TagB' }
+      ];
+
+      const operation: RemoveTagOperation = {
+        type: 'removeTag',
+        tagId: 'tag-abc'
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(workflowWithObjectTags, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toHaveLength(1);
+    });
+
+    it('should remove object tag by name', async () => {
+      const workflowWithObjectTags = JSON.parse(JSON.stringify(baseWorkflow));
+      workflowWithObjectTags.tags = [
+        { id: 'tag-abc', name: 'TagA' },
+        { id: 'tag-def', name: 'TagB' }
+      ];
+
+      const operation: RemoveTagOperation = {
+        type: 'removeTag',
+        tagName: 'TagA'
+      };
+
+      const request: WorkflowDiffRequest = {
+        id: 'test-workflow',
+        operations: [operation]
+      };
+
+      const result = await diffEngine.applyDiff(workflowWithObjectTags, request);
+
+      expect(result.success).toBe(true);
+      expect(result.workflow!.tags).toHaveLength(1);
+    });
+
     it('should handle removing non-existent tag gracefully', async () => {
       const operation: RemoveTagOperation = {
         type: 'removeTag',

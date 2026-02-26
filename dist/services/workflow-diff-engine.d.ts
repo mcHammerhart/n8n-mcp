@@ -26,6 +26,9 @@ export declare class WorkflowDiffEngine {
     private applyRewireConnection;
     private applyUpdateSettings;
     private applyUpdateName;
+    private resolveTagIdentifier;
+    private tagExists;
+    private findTagIndex;
     private applyAddTag;
     private applyRemoveTag;
     private validateActivateWorkflow;

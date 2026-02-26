@@ -632,18 +632,47 @@ class WorkflowDiffEngine {
     applyUpdateName(workflow, operation) {
         workflow.name = operation.name;
     }
+    resolveTagIdentifier(operation) {
+        return operation.tagId || operation.tagName || operation.tag || '';
+    }
+    tagExists(tags, identifier) {
+        return tags.some(t => {
+            if (typeof t === 'string')
+                return t === identifier;
+            if (typeof t === 'object' && t !== null) {
+                return t.id === identifier || t.name === identifier;
+            }
+            return false;
+        });
+    }
+    findTagIndex(tags, identifier) {
+        return tags.findIndex(t => {
+            if (typeof t === 'string')
+                return t === identifier;
+            if (typeof t === 'object' && t !== null) {
+                return t.id === identifier || t.name === identifier;
+            }
+            return false;
+        });
+    }
     applyAddTag(workflow, operation) {
         if (!workflow.tags) {
             workflow.tags = [];
         }
-        if (!workflow.tags.includes(operation.tag)) {
-            workflow.tags.push(operation.tag);
+        const identifier = this.resolveTagIdentifier(operation);
+        if (!identifier)
+            return;
+        if (!this.tagExists(workflow.tags, identifier)) {
+            workflow.tags.push(identifier);
         }
     }
     applyRemoveTag(workflow, operation) {
         if (!workflow.tags)
             return;
-        const index = workflow.tags.indexOf(operation.tag);
+        const identifier = this.resolveTagIdentifier(operation);
+        if (!identifier)
+            return;
+        const index = this.findTagIndex(workflow.tags, identifier);
         if (index !== -1) {
             workflow.tags.splice(index, 1);
         }
